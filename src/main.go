@@ -3,7 +3,8 @@ package main
 import (
 	"fmt"
 	"github.com/apple/foundationdb/bindings/go/src/fdb"
-	"log"
+	queue "github.com/wfnuser/silverboat/src/model"
+	"strconv"
 )
 
 func main() {
@@ -13,14 +14,34 @@ func main() {
 	// Open the default database from the system cluster
 	db := fdb.MustOpenDefault()
 
-	// Database reads and writes happen inside transactions
-	ret, e := db.Transact(func(tr fdb.Transaction) (interface{}, error) {
-		tr.Set(fdb.Key("hello"), []byte("world"))
-		return tr.Get(fdb.Key("foo")).MustGet(), nil
-	})
-	if e != nil {
-		log.Fatalf("Unable to perform FDB transaction (%v)", e)
+	q := queue.NewQueue("testqueue1", db)
+
+	fmt.Println("Enqueue 10 elements")
+	for i := 1; i <= 10; i++ {
+		q.Enqueue([]byte("test" + strconv.Itoa(i)))
+	}
+	fmt.Println("Dequeue 5 elements")
+	for i := 1; i <= 5; i++ {
+		bytes, e := q.Dequeue()
+		if e != nil {
+			fmt.Println(e)
+		}
+		fmt.Println(string(bytes))
 	}
 
-	fmt.Printf("hello is now world, foo was: %s\n", string(ret.([]byte)))
+	fmt.Println("Enqueue 10 elements")
+	for i := 11; i <= 20; i++ {
+		q.Enqueue([]byte("2test" + strconv.Itoa(i)))
+	}
+
+	fmt.Println("Dequeue 15 elements")
+	for i := 1; i <= 15; i++ {
+		bytes, e := q.Dequeue()
+		if e != nil {
+			fmt.Println(e)
+		}
+		fmt.Println(string(bytes))
+	}
+
+	return
 }
