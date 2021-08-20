@@ -49,7 +49,7 @@ func (q *Queue) Enqueue(value []byte) []byte {
 func (q *Queue) FirstItem() (fdb.KeyValue, error) {
 	ret, e := q.db.Transact(func(tr fdb.Transaction) (interface{}, error) {
 		pr, _ := fdb.PrefixRange(q.sub.Bytes())
-		kvs, e := tr.Snapshot().GetRange(pr, fdb.RangeOptions{}).GetSliceWithError()
+		kvs, e := tr.Snapshot().GetRange(pr, fdb.RangeOptions{Limit: 1}).GetSliceWithError()
 
 		if e != nil {
 			log.Fatalf("Unable to read range: %v\n", e)
@@ -69,7 +69,7 @@ func (q *Queue) FirstItem() (fdb.KeyValue, error) {
 func (q *Queue) LastIndex() int64 {
 	ret, e := q.db.Transact(func(tr fdb.Transaction) (interface{}, error) {
 		pr, _ := fdb.PrefixRange(q.sub.Bytes())
-		kvs, e := tr.Snapshot().GetRange(pr, fdb.RangeOptions{Reverse: true}).GetSliceWithError()
+		kvs, e := tr.Snapshot().GetRange(pr, fdb.RangeOptions{Reverse: true, Limit: 1}).GetSliceWithError()
 
 		if e != nil {
 			log.Fatalf("Unable to read range: %v\n", e)
