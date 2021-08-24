@@ -47,7 +47,7 @@ func (q *Queue) Enqueue(value []byte) []byte {
 }
 
 func (q *Queue) FirstItem() (fdb.KeyValue, error) {
-	ret, e := q.db.Transact(func(tr fdb.Transaction) (interface{}, error) {
+	ret, e := q.db.ReadTransact(func(tr fdb.ReadTransaction) (interface{}, error) {
 		pr, _ := fdb.PrefixRange(q.sub.Bytes())
 		kvs, e := tr.Snapshot().GetRange(pr, fdb.RangeOptions{Limit: 1}).GetSliceWithError()
 
@@ -60,14 +60,14 @@ func (q *Queue) FirstItem() (fdb.KeyValue, error) {
 			return kv, nil
 		}
 
-		return fdb.KeyValue{}, nil
+		return nil, nil
 	})
 
 	return ret.(fdb.KeyValue), e
 }
 
 func (q *Queue) LastIndex() int64 {
-	ret, e := q.db.Transact(func(tr fdb.Transaction) (interface{}, error) {
+	ret, e := q.db.ReadTransact(func(tr fdb.ReadTransaction) (interface{}, error) {
 		pr, _ := fdb.PrefixRange(q.sub.Bytes())
 		kvs, e := tr.Snapshot().GetRange(pr, fdb.RangeOptions{Reverse: true, Limit: 1}).GetSliceWithError()
 
