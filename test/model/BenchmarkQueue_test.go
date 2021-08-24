@@ -16,7 +16,10 @@ func BenchmarkEnqueue(b *testing.B) {
 	q := queue.NewQueue("benchmark_queue", db)
 	b.ResetTimer()
 
-	for i:=0; i<b.N; i++ {
-		q.Enqueue([]byte(utils.RandStringBytesRmndr(10)))
-	}
+	b.SetParallelism(200)
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			q.Enqueue([]byte(utils.RandStringBytesRmndr(10)))
+		}
+	})
 }

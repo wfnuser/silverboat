@@ -10,10 +10,14 @@ func BenchmarkTransactSet(b *testing.B) {
 	fdb.MustAPIVersion(620)
 	db := fdb.MustOpenDefault()
 	b.ResetTimer()
-	for i:=0; i<b.N; i++ {
-		db.Transact(func(tr fdb.Transaction) (interface{}, error) {
-			tr.Set(fdb.Key(utils.RandStringBytesRmndr(10)), []byte(utils.RandStringBytesRmndr(10)))
-			return nil, nil
-		})
-	}
+
+	b.SetParallelism(500)
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			db.Transact(func(tr fdb.Transaction) (interface{}, error) {
+				tr.Set(fdb.Key(utils.RandStringBytesRmndr(10)), []byte(utils.RandStringBytesRmndr(10)))
+				return nil, nil
+			})
+		}
+	})
 }
