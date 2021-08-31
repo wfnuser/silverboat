@@ -7,6 +7,12 @@ import (
 	"log"
 )
 
+type EmptyQueueError struct{}
+
+func (q EmptyQueueError) Error() string {
+	return "Queue is Empty"
+}
+
 func NewQueue(id string, db fdb.Database) *Queue {
 	return &Queue{
 		db:  db,
@@ -19,20 +25,27 @@ type Queue struct {
 	sub subspace.Subspace
 }
 
-func (q *Queue) Dequeue() ([]byte, error) {
+func (q *Queue) ClearAll() {
+	q.db.Transact(func(tr fdb.Transaction) (interface{}, error) {
+		tr.ClearRange(q.sub.Sub())
+		return nil, nil
+	})
+}
+
+func (q *Queue) Dequeue() (interface{}, error) {
 	ret, e := q.db.Transact(func(tr fdb.Transaction) (interface{}, error) {
 		item, e := q.FirstItem()
 		if e != nil {
 			return nil, e
 		}
-		tr.Clear(item.Key)
-		return item.Value, nil
+		tr.Clear(item.(fdb.KeyValue).Key)
+		return item.(fdb.KeyValue).Value, nil
 	})
 
-	return ret.([]byte), e
+	return ret, e
 }
 
-func (q *Queue) Enqueue(value []byte) []byte {
+func (q *Queue) Enqueue(value []byte) interface{} {
 	ret, e := q.db.Transact(func(tr fdb.Transaction) (interface{}, error) {
 		li := q.LastIndex() + 1
 		tr.Set(q.sub.Pack(tuple.Tuple{li}), value)
@@ -43,27 +56,27 @@ func (q *Queue) Enqueue(value []byte) []byte {
 		log.Fatalf("Unable to enqueue (%v)", e)
 	}
 
-	return ret.([]byte)
+	return ret
 }
 
-func (q *Queue) FirstItem() (fdb.KeyValue, error) {
+func (q *Queue) FirstItem() (interface{}, error) {
 	ret, e := q.db.ReadTransact(func(tr fdb.ReadTransaction) (interface{}, error) {
 		pr, _ := fdb.PrefixRange(q.sub.Bytes())
 		kvs, e := tr.Snapshot().GetRange(pr, fdb.RangeOptions{Limit: 1}).GetSliceWithError()
 
 		if e != nil {
 			log.Fatalf("Unable to read range: %v\n", e)
-			return fdb.KeyValue{}, e
+			return nil, e
 		}
 
 		for _, kv := range kvs {
 			return kv, nil
 		}
 
-		return nil, nil
+		return nil, EmptyQueueError{}
 	})
 
-	return ret.(fdb.KeyValue), e
+	return ret, e
 }
 
 func (q *Queue) LastIndex() int64 {
