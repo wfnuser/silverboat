@@ -8,6 +8,44 @@ import (
 	"strconv"
 )
 
+func tbl_run(db fdb.Database) {
+	tbl := model.NewTable("testtable1", db)
+
+	tbl.TableSetCell(0, 0, "Hello")
+	tbl.TableSetCell(0, 1, "World")
+	
+	fmt.Println(tbl.TableGetCell(0, 0).(string))
+	fmt.Println(tbl.TableGetCell(0, 1).(string))
+	
+	tbl.TableSetRow( 1, "Hello2", "World2", "Again!", 1)
+	
+	fmt.Println(tbl.TableGetCell(0, 0).(string))
+	fmt.Println(tbl.TableGetCell(0, 1).(string))
+	
+	cols, e := tbl.TableGetCol(1)
+	if e != nil {
+		fmt.Println(e)
+		return
+	}
+	
+	fmt.Println("start print col : 1")
+	for _, v := range cols {
+		fmt.Println(v.(string))
+	}
+
+	cols2, e2 := tbl.TableGetCol(2)
+	if e2 != nil {
+		fmt.Println(e2)
+		return
+	}
+
+	fmt.Println("start print col : 2")
+	for _, v := range cols2 {
+		fmt.Println(v.(string))
+	}
+
+}
+
 func pq_run(db fdb.Database) {
 	pq := model.NewPQ("testpq1", db)
 
@@ -59,7 +97,8 @@ func main() {
 	db := fdb.MustOpenDefault()
 
 	//queue_run(db)
-	pq_run(db)
+	//pq_run(db)
+	tbl_run(db)
 
 	return
 }

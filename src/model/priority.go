@@ -46,6 +46,7 @@ func (pq *PQ) Push(value interface{}, priority int) {
 func (pq *PQ) Pop(max bool) interface{} {
 	res, _ := pq.db.Transact(func (tr fdb.Transaction) (interface{}, error){
 		kvs, e := tr.Snapshot().GetRange(pq.sub, fdb.RangeOptions{Limit: 1, Reverse: max}).GetSliceWithError()
+		tr.Snapshot().GetRange(pq.sub, fdb.RangeOptions{}).Iterator().Advance()
 		if e != nil {
 			return nil, e
 		}
