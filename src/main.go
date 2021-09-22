@@ -8,6 +8,19 @@ import (
 	"strconv"
 )
 
+func blb_run(db fdb.Database) {
+	blb := model.NewBlob("testblob", db, 5)
+
+	blb.WriteBlob("test", []byte("ADSADASDASDSADSAfdsafasjgdsakjfpjpqoiwejopjfdasopjfiopdqwjfiopewqfqwjifalpkfjdsakpjfiopajfiopweqjp"))
+	data, err := blb.ReadBlob("test")
+	if err != nil {
+		println(err)
+	}
+
+	println(string(data))
+	blb.ClearAll()
+}
+
 func tbl_run(db fdb.Database) {
 	tbl := model.NewTable("testtable1", db)
 
@@ -98,7 +111,8 @@ func main() {
 
 	//queue_run(db)
 	//pq_run(db)
-	tbl_run(db)
+	//tbl_run(db)
+	blb_run(db)
 
 	return
 }
