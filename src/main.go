@@ -3,18 +3,25 @@ package main
 import (
 	"fmt"
 	"github.com/apple/foundationdb/bindings/go/src/fdb"
-	queue "github.com/wfnuser/silverboat/src/model"
+	model "github.com/wfnuser/silverboat/src/model"
+	"math/rand"
 	"strconv"
 )
 
-func main() {
-	// Different API versions may expose different runtime behaviors.
-	fdb.MustAPIVersion(620)
+func pq_run(db fdb.Database) {
+	pq := model.NewPQ("testpq1", db)
 
-	// Open the default database from the system cluster
-	db := fdb.MustOpenDefault()
+	for i := 1; i <= 50; i++ {
+		pq.Push([]byte("testpq"+ strconv.Itoa(i)), rand.Intn(3))
+	}
+	for i := 1; i <= 50; i++ {
+		bytes := pq.Pop(true)
+		fmt.Println(string(bytes.([]byte)))
+	}
+}
 
-	q := queue.NewQueue("testqueue1", db)
+func queue_run(db fdb.Database) {
+	q := model.NewQueue("testqueue1", db)
 
 	fmt.Println("Enqueue 10 elements")
 	for i := 1; i <= 10; i++ {
@@ -26,7 +33,7 @@ func main() {
 		if e != nil {
 			fmt.Println(e)
 		}
-		fmt.Println(string(bytes))
+		fmt.Println(bytes.([]byte))
 	}
 
 	fmt.Println("Enqueue 10 elements")
@@ -40,8 +47,19 @@ func main() {
 		if e != nil {
 			fmt.Println(e)
 		}
-		fmt.Println(string(bytes))
+		fmt.Println(bytes.([]byte))
 	}
+}
+
+func main() {
+	// Different API versions may expose different runtime behaviors.
+	fdb.MustAPIVersion(620)
+
+	// Open the default database from the system cluster
+	db := fdb.MustOpenDefault()
+
+	//queue_run(db)
+	pq_run(db)
 
 	return
 }
